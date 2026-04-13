@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>College Attendance System</title>
+
+<style>
+body{
+font-family: Arial;
+background:#f0f2f5;
+text-align:center;
+}
+
+.container{
+width:90%;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+input, select, button{
+padding:8px;
+margin:5px;
+}
+
+button{
+background:#007bff;
+color:white;
+border:none;
+border-radius:4px;
+cursor:pointer;
+}
+
+button:hover{
+background:#0056b3;
+}
+
+table{
+width:100%;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+}
+
+.present{
+background:#d4edda;
+}
+
+.absent{
+background:#f8d7da;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>College Attendance Management</h1>
+
+<!-- FILTERS -->
+<select id="sem">
+<option>Sem 1</option>
+<option>Sem 2</option>
+<option>Sem 3</option>
+<option>Sem 4</option>
+<option>Sem 5</option>
+<option>Sem 6</option>
+</select>
+
+<select id="div">
+<option>Div A</option>
+<option>Div B</option>
+</select>
+
+<select id="term">
+<option>Term 1</option>
+<option>Term 2</option>
+</select>
+
+<input type="text" id="subject" placeholder="Subject">
+<input type="date" id="date">
+
+<button onclick="loadStudents()">Load Class</button>
+
+<!-- TABLE -->
+<table id="attendanceTable">
+<tr>
+<th>Enroll No</th>
+<th>Name</th>
+<th>Present</th>
+<th>Absent</th>
+</tr>
+</table>
+
+<button onclick="saveAttendance()">Save Attendance</button>
+
+<h2>Reports</h2>
+<button onclick="dailyReport()">Daily Report</button>
+<button onclick="monthlyReport()">Monthly Report</button>
+
+<div id="report"></div>
+
+</div>
+
+<script>
+
+// Dummy 75 Students
+let students = [];
+for(let i=1;i<=75;i++){
+students.push({
+enroll: "ENR" + (100+i),
+name: "Student " + i
+});
+}
+
+// Load Students in Table
+function loadStudents(){
+let table = document.getElementById("attendanceTable");
+table.innerHTML = `
+<tr>
+<th>Enroll No</th>
+<th>Name</th>
+<th>Present</th>
+<th>Absent</th>
+</tr>`;
+
+students.forEach(stu=>{
+let row = table.insertRow();
+
+row.insertCell(0).innerHTML = stu.enroll;
+row.insertCell(1).innerHTML = stu.name;
+
+row.insertCell(2).innerHTML =
+`<button onclick="mark(this,'present')">P</button>`;
+
+row.insertCell(3).innerHTML =
+`<button onclick="mark(this,'absent')">A</button>`;
+});
+}
+
+// Mark Attendance
+function mark(btn,status){
+let row = btn.parentNode.parentNode;
+
+if(status=="present"){
+row.className="present";
+}
+else{
+row.className="absent";
+}
+}
+
+// Save Attendance (Backend)
+function saveAttendance(){
+
+let sem = document.getElementById("sem").value;
+let div = document.getElementById("div").value;
+let term = document.getElementById("term").value;
+let sub = document.getElementById("subject").value;
+let date = document.getElementById("date").value;
+
+if(sub=="" || date==""){
+alert("Enter Subject & Date");
+return;
+}
+
+let key = sem+"_"+div+"_"+term+"_"+sub+"_"+date;
+
+let table = document.getElementById("attendanceTable");
+let data = [];
+
+for(let i=1;i<table.rows.length;i++){
+
+let row = table.rows[i];
+
+data.push({
+enroll: row.cells[0].innerHTML,
+name: row.cells[1].innerHTML,
+status: row.className || "absent"
+});
+}
+
+localStorage.setItem(key,JSON.stringify(data));
+
+alert("Attendance Saved!");
+}
+
+// DAILY REPORT
+function dailyReport(){
+
+let sem = document.getElementById("sem").value;
+let div = document.getElementById("div").value;
+let term = document.getElementById("term").value;
+let sub = document.getElementById("subject").value;
+let date = document.getElementById("date").value;
+
+let key = sem+"_"+div+"_"+term+"_"+sub+"_"+date;
+
+let data = JSON.parse(localStorage.getItem(key));
+
+if(!data){
+document.getElementById("report").innerHTML="No Data";
+return;
+}
+
+let present = data.filter(s=>s.status=="present").length;
+let absent = data.length - present;
+
+document.getElementById("report").innerHTML =
+`Present: ${present} | Absent: ${absent}`;
+}
+
+// MONTHLY REPORT
+function monthlyReport(){
+
+let month = document.getElementById("date").value.slice(0,7);
+
+let totalP=0,totalA=0;
+
+for(let key in localStorage){
+
+if(key.includes(month)){
+
+let data = JSON.parse(localStorage.getItem(key));
+
+data.forEach(s=>{
+if(s.status=="present") totalP++;
+else totalA++;
+});
+}
+}
+
+document.getElementById("report").innerHTML =
+`Monthly Present: ${totalP} | Monthly Absent: ${totalA}`;
+}
+
+</script>
+
+</body>
+</html>
